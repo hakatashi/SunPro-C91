@@ -1,0 +1,76 @@
+% Configurate width of the body
+\setlength{\oddsidemargin}{13mm}
+\setlength{\evensidemargin}{27mm}
+\setlength{\textwidth}{\paperwidth}
+\addtolength{\textwidth}{-\oddsidemargin}
+\addtolength{\textwidth}{-\evensidemargin}
+\addtolength{\oddsidemargin}{-1in}
+\addtolength{\evensidemargin}{-1in}
+
+% Disable margin notes
+\setlength{\marginparsep}{0mm}
+\setlength{\marginparwidth}{0mm}
+
+% Configurate height of the body
+\setlength{\topmargin}{5mm}
+\setlength{\headheight}{10mm}
+\setlength{\headsep}{5mm}
+\setlength{\footskip}{10mm}
+\setlength{\textheight}{\paperheight}
+\addtolength{\textheight}{-\topmargin}
+\addtolength{\textheight}{-\headheight}
+\addtolength{\textheight}{-\headsep}
+\addtolength{\textheight}{-\footskip}
+\addtolength{\footskip}{-10mm}
+\addtolength{\topmargin}{-1in}
+
+\setlength{\hoffset}{1.5mm}
+\setlength{\voffset}{0mm}
+
+%% from review-pdfmaker
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhead[LO,RE]{\gtfamily\sffamily\bfseries\upshape \thepage}
+\fancyhead[RO,LE]{\gtfamily\sffamily\bfseries\upshape \leftmark}
+\fancyfoot{}
+\renewcommand{\sectionmark}[1]{\markright{\thesection~#1}{}}
+\renewcommand{\chaptermark}[1]{\markboth{\prechaptername\ \thechapter\ \postchaptername~#1}{}}
+\renewcommand{\headfont}{\gtfamily\sffamily\bfseries}
+
+\fancypagestyle{plainhead}{
+	\fancyhead{}
+	\fancyfoot{}
+	\renewcommand{\headrulewidth}{0pt}
+	\renewcommand{\footrulewidth}{0pt}
+}
+
+%% using Helvetica as sans-serif
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+
+% Define \chapterauthor command
+\makeatletter
+\newcommand{\chapterauthor}[1]{%
+	{%
+		\parindent0pt%
+		\vspace*{-40pt}%
+		\linespread{1.1}%
+		\LARGE#1%
+		\par%
+		\nobreak%
+		\vspace*{35pt}%
+	}
+	\@afterheading%
+}
+\makeatother
+
+% https://github.com/kmuto/review/issues/419
+\makeatletter
+\def\lst@title@dropdelim\hskip1zw{\if\lst@title\relax\vspace{1.5em}\fi}
+\makeatother
+
+\renewcommand{\textbf}[1]{{\bfseries\sffamily#1}}
+
+%\usepackage{inconsolata}
+
+\sloppy
