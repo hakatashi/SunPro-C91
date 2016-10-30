@@ -2,8 +2,8 @@
 
 [![Build Status][travis-image]][travis-url]
 
-[travis-image]: https://travis-ci.com/hakatashi/SunPro-techbookfest.svg?token=LBP6dMS3oXazpwBS3Fws&branch=master
-[travis-url]: https://travis-ci.com/hakatashi/SunPro-techbookfest
+[travis-image]: https://travis-ci.com/hakatashi/SunPro-C91.svg?token=LBP6dMS3oXazpwBS3Fws&branch=master
+[travis-url]: https://travis-ci.com/hakatashi/SunPro-C91
 
 ## 開発方針
 
