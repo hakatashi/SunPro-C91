@@ -1,7 +1,8 @@
 PREDEF:
   - intro.re
 
-CHAPS: []
+CHAPS:
+  - hakatashi.re
 
 POSTDEF:
   - postscript.re
