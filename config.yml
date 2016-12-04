@@ -194,6 +194,9 @@ highlight:
 # ページ送りの送り方向、page-progression-directionの値("ltr"|"rtl"|"default")
 # direction: "ltr"
 
+# コラムや表など平文でないところで脚注を使うためのオプション。
+footnotetext: true
+
 # EPUBのOPFへの固有の追加ルール
 # <package>要素に追加する名前空間
 # opf_prefix: {ebpaj: "http://www.ebpaj.jp/"}
