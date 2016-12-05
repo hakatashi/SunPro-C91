@@ -65,5 +65,151 @@ pix2pixでは@<m>{\mathcal{L\}_{L1\}(G) = \mathbb{E\}_{x,y \sim p_{data\}(x, y),
 つまり、ペアとなった画像の学習データを用意すれば、ここまで説明してきた技術をすぐに使えるというわけです。
 こんな素晴らしいものを使わない手はないですよね。
 
+== データセットを作る
+
+とはいっても、ロイ・リキテンスタインの絵画とその元になった写真というデータセットは存在しません。
+つまり、pix2pixで絵画を変換するには、まずそのための学習データを作るということから始めないといけません。
+
+ここで、@<img>{interior}を観察してみましょう。
+これを見ると、ロイ・リキテンスタインの絵の特徴的なポイントは、以下の3点にあることが分かります。
+
+* 太く黒い線でしっかりと縁取られた輪郭線
+* 赤や黄といった原色に近い鮮やかな配色
+* 斜線や水玉模様といった幾何学的かつ単純なテクスチャ
+
+逆に考えてみると、写真と、それに写っている物体の輪郭の情報があれば、
+機械的に配色し、テクスチャを貼り付けることで、ロイ・リキテンスタイン風の絵を生成できそうです。
+
+さらに、輪郭抽出は、Canny法と呼ばれるアルゴリズムを使えば、OpenCVなどで自動的にできるので、どうにかなりそうです。
+しかし、Canny法で複雑な画像に対して輪郭抽出をしようとすると、かなり細かくパラメータ設定をしないと、
+@<img>{canny}のように線が非常に多くなってしまい、あまりロイ・リキテンスタインっぽくはならないようにも思えます。
+//image[canny][Canny法による輪郭抽出の例@<raw>{|latex|\protect}@<fn>{canny}][scale=0.7]
+//footnote[canny][@<raw>{|latex|\protect}@<href>{https://en.wikipedia.org/wiki/Canny_edge_detector}より引用]
+
+そこで、今回は、NYU Depth Dataset v2@<bib>{nathan}というデータセットを使うことにします。
+これは、Kinectで撮影した、室内風景の写真とその深度情報を組み合わせたデータセットで、約41万枚の画像が含まれています。
+そして、そのうちの1449枚には、人間によって付与された物体の領域情報がラベルとして含まれています。
+具体的に、そのうちの幾つかをみてみると、@<img>{nyudepth}のように、少しロイ・リキテンスタインのような雰囲気が見て取れるのが分かります。
+//image[nyudepth][NYU Depth Dataset v2に含まれる写真と深度情報、そして物体の領域情報の例@<raw>{|latex|\protect}@<fn>{nyudepth}]
+//footnote[nyudepth][@<raw>{|latex|\protect}@<href>{http://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html}より引用]
+
+では、このデータセットを使って、写真を変換するスクリプトをPythonで実装していきたいと思います。
+データセットは、Matlab向けの.matファイルなので、h5pyで読み込みます。
+実行時引数として、データセットのファイルのパスと、写真・変換された画像を保存するディレクトリを受け取ります。
+
+//emlistnum[データセットの読み込み][python]{
+if __name__ == '__main__':
+    if len(sys.argv) < 4:
+        print '%s [mat file] [dir to save original] [dir to save converted]'
+        sys.exit(-1)
+
+    mat = h5py.File(sys.argv[1])
+
+    for index, (image, label) in enumerate(zip(mat['images'], mat['labels'])):
+        orig, conv = convert(image, label)
+        orig.save(os.path.join(sys.argv[2], '%05d.png' % index))
+        conv.save(os.path.join(sys.argv[3], '%05d.png' % index))
+//}
+
+@<code>{convert(image, label)}は、データセット内の写真と対応するラベルの情報を受け取りますが、
+どちらもnumpyの配列形式となっていることに注意する必要があります。
+また、ラベルについては、写真にある物体ごとに1以上の番号が割り当てられており、
+ピクセルのそれぞれについて、物体の領域に含まれている場合はその番号が、そうでない場合は0が割り当てられているという形式になっています。
+
+//emlistnum[画像の変換][python]{
+def convert(image, label):
+    orig = Image.fromarray(image.T, 'RGB')
+
+    for index in numpy.unique(label):
+        # 物体ごとに中央値をちょっと明るくした色で埋める
+        color = tuple([min(255, int(1.3 * numpy.median(image[channel][label == index])))
+                                                                for channel in range(3)])
+
+        # テクスチャを生成する
+        if (label == index).sum() < image.shape[1] * image.shape[2] * 0.1:
+            texture = random.choice([fill, dot, diagonal])(image.shape[1:3], color)
+        else:
+            if sum(color) / 3 < 128:
+                color = tuple([255 - c for c in color])
+            texture = fill(image.shape[1:3], color)
+
+        # 物体の輪郭線を書く
+        contour = numpy.zeros(label.shape, dtype = numpy.uint8)
+        contour[label == index] = 255
+        contour = Image.fromarray(contour.T, 'P').convert('RGB')
+        contour = numpy.asarray(contour.filter(ImageFilter.CONTOUR)).T
+
+        # テクスチャと輪郭線を載せる
+        for channel in range(3):
+            image[channel][label == index] = texture[channel][label == index]
+            image[channel] = numpy.minimum(image[channel], contour[channel])
+
+    conv = Image.fromarray(image.T, 'RGB')
+
+    return orig, conv
+//}
+
+まず、4行目のforによって、画像に含まれる物体のそれぞれについて同じ処理を繰り返すようにしています。
+そして、ロイ・リキテンスタインの絵画では物体がそれぞれ1色で塗られていることから、5~6行目で物体を塗りつぶす色を決定しています。
+ここでは、物体の領域に含まれる色の中央値を取り、さらに原色に近い色にするために、RGBをそれぞれ1.3倍するという処理を行っています。
+
+そこから、9~15行目で決定した色のテクスチャをランダムに生成しています。
+ここで、@<code>{fill(shape, color)}は与えられたサイズを与えられた色で埋めた画像を生成する関数、
+@<code>{dot(shape, color)}は水玉で埋めた画像を生成する関数、@<code>{diagonal(shape, color)}は斜線で埋めた画像を生成する関数とします。
+つまり、後で物体に該当する部分だけ切り抜いて使うために、画像サイズと同じテクスチャを作っておくという処理になっています。
+また、ロイ・リキテンスタインの絵画を見ると、壁や床などの大きな領域では幾何学的なテクスチャがあまり用いられていないことから、
+物体の領域が画像の10%以下の場合のみに水玉や斜線を用いるようにしています。
+
+そして、18~21行目で物体の輪郭線を生成しています。
+ここでは、物体の領域だけを白く塗った白黒画像を作った上で、PILの@<code>{ImageFilter.CONTOUR}というフィルタ機能によって輪郭線を得ています。
+最後に、24~27行目で、RGBのそれぞれについて、物体の領域に該当するテクスチャを切り抜いて貼り付け、
+輪郭線を上から載せるという処理を行っています。
+
+テクスチャを生成する関数は、以下の通りとなっています。
+ここについては、水玉のサイズや斜線の傾きはランダムに決定されるようになっており、描画にはPILの@<code>{ImageDraw}を使っています。
+
+//emlistnum[テクスチャの生成][python]{
+def fill(size, color):
+    img = Image.new('RGB', size, color)
+    return numpy.asarray(img).T
+
+def dot(size, color):
+    radius = random.randint(3, 5)
+    interval = random.randint(radius + 2, int(radius * 1.7))
+
+    img = Image.new('RGB', size, (255, 255, 255))
+    draw = ImageDraw.Draw(img)
+
+    for x in range(0, size[0], interval):
+        for y in range(0, size[1], interval):
+            y += interval * (x / interval % 2) / 2
+            draw.ellipse((x, y, x + radius, y + radius), color)
+
+    return numpy.asarray(img).T
+
+def diagonal(size, color):
+    width = random.randint(2, 4)
+    angle = random.randint(1, 89)
+
+    img = Image.new('RGB', size, (255, 255, 255))
+    draw = ImageDraw.Draw(img)
+
+    for x in range(0, size[0], width * 2):
+        y = x / math.tan(angle / math.pi)
+        draw.line((x, 0, 0, y), color, width)
+
+    for y in range(width * 2 - size[0] % (width * 2), size[1], width * 2):
+        x = size[0] - (size[1] - y) * math.tan(angle / math.pi)
+        draw.line((size[0], y, x, size[1]), color, width)
+
+    return numpy.asarray(img).T
+//}
+
+以上を実行すると、@<img>{royconv}の通り、写真とロイ・リキテンスタイン風の変換画像のデータセットが生成できます。
+それなりにポップアートっぽい雰囲気になってきたので、うまく行けそうな気もしてきました。
+また、pix2pixでは入力画像と出力画像を左右に並べたものを使用しますので、
+最後にGitHubの実装に含まれている@<code>{combine_A_and_B.py}によって結合処理をしておく必要があります。
+//image[royconv][元の写真と生成されたロイ・リキテンスタイン風の変換画像の例]
+
 #@# あとがきに、画像を絵画風にするシステムはたくさんあるけど、絵画を画像にするシステムはないということを書く
 #@# あとがきに、ピクセル単位で対応が取れて、かつ誰もやってなさそうなテーマを考えたときに思いついたことを書く
