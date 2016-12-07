@@ -207,9 +207,78 @@ def diagonal(size, color):
 
 以上を実行すると、@<img>{royconv}の通り、写真とロイ・リキテンスタイン風の変換画像のデータセットが生成できます。
 それなりにポップアートっぽい雰囲気になってきたので、うまく行けそうな気もしてきました。
+//image[royconv][元の写真と生成されたロイ・リキテンスタイン風の変換画像の例]
+
+ここまでのソースコードを@<code>{convert.py}として、コマンドラインの操作をまとめると、以下のようになります@<fn>{shuf}。
+1449枚のデータセットのうち、20%にあたる290枚をランダムに選び、テストデータとして学習データには含めず、
+学習がうまく進んでいるかを確かめるために使うようにしています。
+//footnote[shuf][Macではshufコマンドの代わりに、HomeBrewのcoreutilsに含まれるgshufを使用してください。]
+
+//cmd{
+$ mkdir orig label
+$ python convert.py nyu_depth_v2_labeled.mat orig label
+$ test=`seq 0 1448 | gshuf | head -n 290 | xargs printf "%05d.png\n"`
+$ for dir in orig label
+> do
+>     mkdir $dir/train $dir/test
+>     for file in $test; do mv $dir/$file $dir/test; done
+>     mv $dir/*.png $dir/train
+> done
+//}
+
+そして、変換したいロイ・リキテンスタインのポップアートもデータセットに加えておきます。
+そのために、以下のソースコードを用いて、まず@<m>{640 \times 480}の解像度で切り出します。
+
+//emlistnum[ポップアートの切り出し][python]{
+import os
+import sys
+from PIL import Image
+
+target = (640, 480)
+interval = 20
+
+if __name__ == '__main__':
+    if len(sys.argv) < 3:
+        print '%s [input image] [output image]' % sys.argv[0]
+        sys.exit(-1)
+
+    img = Image.open(sys.argv[1])
+    ratio = max([float(target[i]) / img.size[i] for i in range(2)])
+    size = tuple(map(lambda x: int(x * ratio), img.size))
+    img = img.resize(size, Image.ANTIALIAS)
+
+    name, ext = os.path.splitext(sys.argv[2])
+    index = 0
+
+    for x in range(0, (size[0] - target[0]) / 2 + 1, interval):
+        for y in range(0, (size[1] - target[1]) / 2 + 1, interval):
+            crop = img.crop((x, y, x + target[0], y + target[1]))
+            crop.save('%s_%02d%s' % (name, index, ext))
+            index += 1
+
+//}
+
+これを@<code>{crop.py}として、以下のような操作を行います。
+なお、これらは学習に用いず、また正解データも存在しないので、
+@<code>{orig}と@<code>{label}に同じものをコピーしておきます。
+
+//cmd{
+$ mkdir orig/val label/val
+$ for file in `ls poparts`; do python crop.py poparts/$file orig/val/$file; done
+$ cp orig/val/* label/val/
+//}
+
 また、pix2pixでは入力画像と出力画像を左右に並べたものを使用しますので、
 最後にGitHubの実装に含まれている@<code>{combine_A_and_B.py}によって結合処理をしておく必要があります。
-//image[royconv][元の写真と生成されたロイ・リキテンスタイン風の変換画像の例]
+出来上がった@<code>{lichtenstein}ディレクトリをpix2pixの@<code>{dataset}以下に配置すれば完成です。
+
+//cmd{
+$ mkdir lichtenstein
+$ python combine_A_and_B.py --fold_A orig --fold_B label --fold_AB lichtenstein
+//}
+
+== 学習させる
+
 
 #@# あとがきに、画像を絵画風にするシステムはたくさんあるけど、絵画を画像にするシステムはないということを書く
 #@# あとがきに、ピクセル単位で対応が取れて、かつ誰もやってなさそうなテーマを考えたときに思いついたことを書く
