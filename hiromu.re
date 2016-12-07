@@ -264,21 +264,60 @@ if __name__ == '__main__':
 
 //cmd{
 $ mkdir orig/val label/val
-$ for file in `ls poparts`; do python crop.py poparts/$file orig/val/$file; done
+$ for file in `ls lichtenstein`; do python crop.py lichtenstein/$file orig/val/$file; done
 $ cp orig/val/* label/val/
 //}
 
 また、pix2pixでは入力画像と出力画像を左右に並べたものを使用しますので、
 最後にGitHubの実装に含まれている@<code>{combine_A_and_B.py}によって結合処理をしておく必要があります。
-出来上がった@<code>{lichtenstein}ディレクトリをpix2pixの@<code>{dataset}以下に配置すれば完成です。
+出来上がった@<code>{poparts}ディレクトリをpix2pixの@<code>{dataset}以下に配置すれば完成です。
 
 //cmd{
-$ mkdir lichtenstein
-$ python combine_A_and_B.py --fold_A orig --fold_B label --fold_AB lichtenstein
+$ mkdir poparts
+$ python combine_A_and_B.py --fold_A orig --fold_B label --fold_AB poparts
 //}
+
+===[column] 記事中で用いている画像について
+
+次章で変換結果の画像をいくつか掲載していますが、印刷版ではすべて白黒となってしまうために、
+それぞれの違いがよくわからないというケースもあるかと思います。
+つきましては、@<href>{https://goo.gl/2x7Iet}に本記事で用いた画像の一部を
+すべてアップロードしておりますので、適宜ご参照ください。
+
+===[/column]
 
 == 学習させる
 
+それでは、早速学習させていきましょう。
+以下のようにして、pix2pixのREADMEに従って学習させ、テストデータを変換してみます。
+ちなみに、@<code>{train.lua}はデフォルトで200 epochの学習を行うようになっており、
+手元のGTX 970では12時間ほど掛かりました。
+
+//cmd{
+$ DATA_ROOT=./datasets/poparts name=poparts which_direction=BtoA th train.lua
+$ DATA_ROOT=./datasets/poparts name=poparts which_direction=BtoA phase=test th test.lua
+$ DATA_ROOT=./datasets/poparts name=poparts which_direction=BtoA phase=val th test.lua
+//}
+
+結果は@<img>{rescolor}の通りで、左側のテストデータでの変換結果を見ると、それなりに元の写真に近いものが出力されていることが分かります。
+一番下の出力画像ではソファーになぜか扉のような模様が付いてしまっていますが、4つとも遠目で見ると写真っぽく見えなくもないでしょう。
+//image[rescolor][200 epoch時点での変換結果@<raw>{|latex|\protect}@<fn>{poparts}]
+//footnote[poparts][使用したロイ・リキテンスタインの絵画は、上から順に@<raw>{|latex|\protect}@<href>{http://www.imageduplicator.com/main.php?decade=90&year=93&work_id=1649}、@<raw>{|latex|\protect}@<href>{http://www.imageduplicator.com/main.php?decade=90&year=90&work_id=3747}、@<raw>{|latex|\protect}@<href>{http://www.imageduplicator.com/main.php?decade=90&year=92&work_id=1482}、@<raw>{|latex|\protect}@<href>{http://www.imageduplicator.com/main.php?decade=90&year=91&work_id=1340}より引用]
+
+一方で、右側のポップアートでの変換結果を見てみると、なんだか入力画像をぼやっとさせただけのような画像が出力されてしまっています。
+また、もともとの色使いがかなり出力画像にも残ってしまっているため、あまり写真には見えないという結果になってしまいました。
+そこで、入力画像をすべて白黒化して学習させるということを試してみました。
+単なる白黒写真のカラー化であればpix2pixが力を発揮すると分かっていますし、白黒にしてしまえば、ポップアートの鮮やかな色使いにもあまり影響されずに済みそうです。
+//image[resgray][入力画像を白黒化した場合の200 epoch時点での変換結果]
+
+@<img>{resgray}の通り、左側のテストデータは白黒化しなかった時より、
+色が違っていたり、変な模様が付いていたりと精度が落ちたように見えますが、
+右側のポップアートは先程よりかなり写真らしくなっているように見えます。
+@<img>{rescolor}とよく見比べてみると、ベッドのシーツが水色からクリーム色になっていたり、
+壁が赤色から茶色になっていたりと、それらしい色に置き換えられているのが分かります。
+ただ、まだ画像がぼやっとしているような印象を受けるので、60時間ほど掛けて、さらに1000 epochほど学習させてみました。
+その結果が@<img>{result}です。
+//image[result][入力画像を白黒化した場合の1200 epoch時点での変換結果]
 
 #@# あとがきに、画像を絵画風にするシステムはたくさんあるけど、絵画を画像にするシステムはないということを書く
 #@# あとがきに、ピクセル単位で対応が取れて、かつ誰もやってなさそうなテーマを考えたときに思いついたことを書く
