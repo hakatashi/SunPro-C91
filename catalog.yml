@@ -4,6 +4,7 @@ PREDEF:
 CHAPS:
   - hakatashi.re
   - hiromu.re
+  - bib.re
 
 POSTDEF:
   - postscript.re
