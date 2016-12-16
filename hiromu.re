@@ -4,7 +4,7 @@
 
 == はじめに
 
-こんにちは。SunProメンバーのhiromu(@hiromu1996)です。
+こんにちは。SunProメンバーのhiromu (@hiromu1996)です。
 今回は、2016年11月下旬に発表された「pix2pix」@<bib>{phillip}を使って、
 絵から芸術家の脳内を再現するということに挑戦してみました。
 一体どういうことなのかというと、アメリカン・コミックのような画風で知られる、
@@ -16,9 +16,9 @@
 今回は、そうしたリキテンスタインの作品の中でも、
 @<img>{interior}のように室内の風景をモデルにした「インテリア」シリーズを対象とします@<fn>{whyinterior}。
 //footnote[whyinterior][データセットに関する章まで読み進めて頂くと、その理由が分かるかと思います。]
-//image[hairribbon][Roy Lichtenstein「Girl with Hair Ribbon」(1965)@<raw>{|latex|\protect}@<fn>{hairribbon}][scale=0.5]
+//image[hairribbon][Roy Lichtenstein「Girl with Hair Ribbon」(1965)@<raw>{|latex|\protect}@<fn>{hairribbon}][scale=0.8]
 //footnote[hairribbon][@<raw>{|latex|\protect}@<href>{http://www.imageduplicator.com/main.php?decade=60&year=65&work_id=278}より引用]
-//image[interior][Roy Lichtenstein「Large Interior with Three Reflections」(1993)@<raw>{|latex|\protect}@<fn>{interior}][scale=0.9]
+//image[interior][Roy Lichtenstein「Large Interior with Three Reflections」(1993)@<raw>{|latex|\protect}@<fn>{interior}]
 //footnote[interior][@<raw>{|latex|\protect}@<href>{http://www.imageduplicator.com/main.php?decade=90&year=93&work_id=1649}より引用]
 
 == pix2pixとは
@@ -34,7 +34,7 @@ GANでは、乱数から画像を生成するGeneratorと、学習データとGe
 2つのニューラルネットワークを競争させながら学習することで、学習データに似たような画像を自動生成することが可能となっています。
 例えるなら、Generatorは贋作画家、Discriminatorは鑑定士で、@<img>{gan}のように互いに勝負を繰り返させることで、
 贋作画家の画力は少しずつ向上し、鑑定士の能力も高くなっていくという仕組みです。
-//image[gan][敵対的生成ネットワーク(GAN)のイメージ図][scale=0.9]
+//image[gan][敵対的生成ネットワーク(GAN)のイメージ図]
 
 pix2pixは、これを発展させた「条件付き敵対的生成ネットワーク(Conditional GAN)」という技術を使用しています。
 Conditional GANでは、航空写真と地図、白黒写真とカラー写真のように入力と出力に対応する2つの画像のペアを学習データとして用います。
@@ -42,20 +42,22 @@ Conditional GANでは、航空写真と地図、白黒写真とカラー写真�
 さらに、Discriminatorには、学習データに含まれる正しいペアと、
 入力側だけ学習データで出力側はGeneratorが生成した画像という偽のペアを与え、判別させます。
 つまり、@<img>{cgan}のようになり、これによって画像変換をGANの仕組みの中で扱えるようになるのです。
-//image[cgan][条件付き敵対的生成ネットワーク(Conditional GAN)のイメージ図(@<bib>{phillip}を基に作成)][scale=0.6]
+//image[cgan][条件付き敵対的生成ネットワーク(Conditional GAN)のイメージ図(@<bib>{phillip}を基に作成)]
 
 GANとConditional GANの目的関数は次の通りになります。
 比較すると、Generatorに入力側となる学習データ@<m>{x}が与えられるようになり、Discriminatorには
 正しいペアの場合に@<m>{D(x, y)}偽のペアの場合に@<m>{D(x, G(x, z))}と2つの画像が与えられるようになっていることが分かるかと思います。
 //texequation{
 \begin{split}
-    \mathcal{L}_{GAN}(G, D) & = \mathbb{E}_{x \sim p_{data}(x))}[\log D(x)] + \mathbb{E}_{z \sim p(z)}[\log (1 - D(G(z))] \\
-    \mathcal{L}_{cGAN}(G, D) & = \mathbb{E}_{x, y \sim p_{data}(x, y))}[\log D(x, y)] + \mathbb{E}_{x \sim p_{data}(x), z \sim p(z)}[\log (1 - D(x, G(x,z))]
+    \mathcal{L}_{GAN}(G, D) = & \mathbb{E}_{x \sim p_{data}(x))}[\log D(x)] \\
+    & + \mathbb{E}_{z \sim p(z)}[\log (1 - D(G(z))]\\
+    \mathcal{L}_{cGAN}(G, D) = & \mathbb{E}_{x, y \sim p_{data}(x, y))}[\log D(x, y)] \\
+    & + \mathbb{E}_{x \sim p_{data}(x), z \sim p(z)}[\log (1 - D(x, G(x,z))]
 \end{split}
 //}
-なお、通常のGANの場合は@<m>{G^* = arg\underset{G\}{min\}\underset{D\}{max\}\ \mathcal{L\}(G, D)}として、最適なGeneratorを得るように学習しますが、
+なお、通常のGANの場合は@<m>{G^* = \arg\underset{G\}{\min\}\underset{D\}{\max\}\ \mathcal{L\}(G, D)}として、最適なGeneratorを得るように学習しますが、
 pix2pixでは@<m>{\mathcal{L\}_{L1\}(G) = \mathbb{E\}_{x,y \sim p_{data\}(x, y), z \sim p_z(z)\}[\left \| y - G(x, z) \right \|_1]}というL1正則化の項を追加して、
-@<m>{G^* = arg\underset{G\}{min\}\underset{D\}{max\}\ \mathcal{L\}_{cGAN\}(G, D) + \lambda \mathcal{L\}_{L1\}(G)}としています。
+@<m>{G^* = \arg\underset{G\}{\min\}\underset{D\}{\max\}\ \mathcal{L\}_{cGAN\}(G, D) + \lambda \mathcal{L\}_{L1\}(G)}としています。
 これは、生成された画像をピクセル単位で正解に近づけるような制約として作用し、GANでの生成結果がよりリアルになることが知られています@<bib>{deepak}。
 
 さらに、pix2pixではPatchGANと呼ばれる技術を導入しています。
@@ -84,7 +86,7 @@ pix2pixでは@<m>{\mathcal{L\}_{L1\}(G) = \mathbb{E\}_{x,y \sim p_{data\}(x, y),
 さらに、輪郭抽出はCanny法と呼ばれるアルゴリズムを使えば、OpenCVなどで自動的にできるのでどうにかなるように思えます。
 しかし、Canny法で複雑な画像に対して輪郭抽出をしようとすると、かなり細かくパラメータ設定をしないと
 @<img>{canny}のように線が非常に多くなってしまうので、あまりロイ・リキテンスタインっぽくはならなさそうです。
-//image[canny][Canny法による輪郭抽出の例@<raw>{|latex|\protect}@<fn>{canny}][scale=0.7]
+//image[canny][Canny法による輪郭抽出の例@<raw>{|latex|\protect}@<fn>{canny}]
 //footnote[canny][@<raw>{|latex|\protect}@<href>{https://en.wikipedia.org/wiki/Canny_edge_detector}より引用]
 
 そこで、今回はNYU Depth Dataset v2@<bib>{nathan}というデータセットを使うことにします。
@@ -98,7 +100,7 @@ pix2pixでは@<m>{\mathcal{L\}_{L1\}(G) = \mathbb{E\}_{x,y \sim p_{data\}(x, y),
 データセットはMatlab向けの.matファイルなのでh5pyで読み込みます。
 また、実行時引数としてデータセットのファイルのパスと、写真・変換された画像を保存するディレクトリを受け取ります。
 
-//emlistnum[データセットの読み込み][python]{
+//emlist[データセットの読み込み][python]{
 if __name__ == '__main__':
     if len(sys.argv) < 4:
         print '%s [mat file] [dir to save original] [dir to save converted]'
@@ -117,7 +119,7 @@ if __name__ == '__main__':
 また、ラベルについては、写真にある物体ごとに1以上の番号が割り当てられており、
 ピクセルのそれぞれについて、物体の領域に含まれている場合はその番号が、そうでない場合は0が割り当てられているという形式になっています。
 
-//emlistnum[画像の変換][python]{
+//emlist[画像の変換][python]{
 def convert(image, label):
     orig = Image.fromarray(image.T, 'RGB')
 
@@ -169,7 +171,7 @@ def convert(image, label):
 テクスチャを生成する関数は、以下の通りとなっています。
 ここについての詳細な説明は割愛しますが、水玉のサイズや斜線の傾きはランダムに決定されるようになっており、描画にはPILの@<code>{ImageDraw}を使っています。
 
-//emlistnum[テクスチャの生成][python]{
+//emlist[テクスチャの生成][python]{
 def fill(size, color):
     img = Image.new('RGB', size, color)
     return numpy.asarray(img).T
@@ -230,7 +232,7 @@ $ for dir in orig label
 そして、変換したいロイ・リキテンスタインのポップアートもデータセットに加えておきます。
 そのために以下のソースコードを用いて、まず@<m>{640 \times 480}の解像度で切り出します。
 
-//emlistnum[ポップアートの切り出し][python]{
+//emlist[ポップアートの切り出し][python]{
 import os
 import sys
 from PIL import Image
@@ -302,14 +304,14 @@ $ DATA_ROOT=./datasets/poparts name=poparts which_direction=BtoA phase=val th te
 
 結果は@<img>{rescolor}の通りで、左側のテストデータでの出力画像を見ると、それなりに元の写真に近いものが出力されていることが分かります。
 一番下の出力画像ではソファーになぜか扉のような模様が付いてしまっていますが、4つとも遠目で見ると写真っぽく見えなくもないでしょう。
-//image[rescolor][200 epoch時点での変換結果@<raw>{|latex|\protect}@<fn>{poparts}][scale=0.98]
+//image[rescolor][200 epoch時点での変換結果@<raw>{|latex|\protect}@<fn>{poparts}]
 //footnote[poparts][使用したロイ・リキテンスタインの絵画は、上から順に@<raw>{|latex|\protect}@<href>{http://www.imageduplicator.com/main.php?decade=90&year=93&work_id=1649}、@<raw>{|latex|\protect}@<href>{http://www.imageduplicator.com/main.php?decade=90&year=90&work_id=3747}、@<raw>{|latex|\protect}@<href>{http://www.imageduplicator.com/main.php?decade=90&year=92&work_id=1482}、@<raw>{|latex|\protect}@<href>{http://www.imageduplicator.com/main.php?decade=90&year=91&work_id=1340}より引用]
 
 一方で、右側のポップアートでの変換結果を見てみると、なんだか入力画像をぼやっとさせただけ画像が出力されてしまっています。
 どうやら、もともとの色使いがかなり出力画像にも残ってしまっているために、あまり写真には見えないという結果となってしまいました。
 そこで、入力画像をすべて白黒化して学習させるということを試してみました。
 単なる白黒写真のカラー化であればpix2pixは有効であると分かっていますし、白黒にしてしまえばポップアートの鮮やかな色使いにもあまり影響されずに済みそうです。
-//image[resgray][入力画像を白黒化した場合の200 epoch時点での変換結果][scale=0.98]
+//image[resgray][入力画像を白黒化した場合の200 epoch時点での変換結果]
 
 @<img>{resgray}の通り、左側のテストデータは白黒化しなかった時に比べ、
 色が違っていたり、変な模様が付いていたりと精度が落ちたように見えますが、
@@ -318,7 +320,7 @@ $ DATA_ROOT=./datasets/poparts name=poparts which_direction=BtoA phase=val th te
 壁が赤色から茶色になっていたりと、それらしい色に置き換えられているのが分かります。
 ただ、まだ画像がぼやっとしているような印象を受けるので、60時間ほど掛けて、さらに1000 epochほど学習させてみました。
 その結果が@<img>{result}です。
-//image[result][入力画像を白黒化した場合の1200 epoch時点での変換結果][scale=0.98]
+//image[result][入力画像を白黒化した場合の1200 epoch時点での変換結果]
 
 == おわりに
 
