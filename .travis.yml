@@ -10,8 +10,7 @@ before_install:
 script:
 - bundle exec rake all 0<&-
 after_success:
-- wget https://kindlegen.s3.amazonaws.com/kindlegen_linux_2.6_i386_v2_9.tar.gz -O
-  - | tar xzvf - kindlegen
+- wget https://kindlegen.s3.amazonaws.com/kindlegen_linux_2.6_i386_v2_9.tar.gz -O | tar xzvf - kindlegen
 - ./kindlegen C91.epub -c2 -verbose -o C91.mobi
 deploy:
   provider: releases
