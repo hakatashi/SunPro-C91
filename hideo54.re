@@ -42,7 +42,8 @@
 
 たとえば、「あー」という声の波形を見てみましょう。ここでは、アニメ1期第4話「まきりんぱな」での、小泉花陽さんと西木野真姫さんの発声練習の部分から短時間分を切り抜いた声を見てみます。次のようなPythonコードを書きました:
 
-//source[sources/hideo54/a.py]
+//source[sources/hideo54/a.py]{
+//}
 
 切り取りの都合で横軸を15000からにしてます。以上を実行して生成される画像が以下になります。
 
@@ -54,7 +55,8 @@
 
 //footnote[fyi][ちなみに、「はじめに」で述べた、学校の物理の授業で見せてもらったのはこれです。]
 
-//source[sources/hideo54/mfcc.py]
+//source[sources/hideo54/mfcc.py]{
+//}
 
 超簡単ですね。とりあえず、様々な曲からMFCCを得るため、次の節でひとまずサンプルを集めます。
 
@@ -79,7 +81,8 @@
 //footnote[why-30s][iTunes Storeだと90秒の試聴ができるんですが、公開されているAPIだと30秒しか落とせないそうです。(Apple社員の人がstack overflowで言ってた @<href>{http://stackoverflow.com/a/14620405} 。)悲しいなあ。]
 //footnote[itunes-search-api][@<href>{https://affiliate.itunes.apple.com/resources/documentation/itunes_search_api_jp/}]
 
-//source[sources/hideo54/solo-live.py]
+//source[sources/hideo54/solo-live.py]{
+//}
 
 よくわからないのですが、たまにタイムアウトするので、タイムアウトした分はもう1度落とすようにしています。それでも無理なものは数分後くらいにタイムアウトが解消されたら適当にcurlとかで拾ってやります。
 
@@ -87,7 +90,8 @@
 
 後で扱いやすいよう、以下のシェルスクリプトを使って、ffmpegでこれをwavに変換します。その際ファイル名に@<tt>{!}や@<tt>{"}, @<tt>{:}, スペースなどが入っていると非常に扱いづらくなるので、事前にそちらの変更もして、ついでに見やすくするためにメンバーごとにディレクトリを分けておきます。
 
-//source[sources/towav.sh]
+//source[sources/towav.sh]{
+//}
 
 #@# 以降執筆中
 
