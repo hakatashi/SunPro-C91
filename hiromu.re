@@ -5,7 +5,7 @@
 == はじめに
 
 こんにちは。SunProメンバーのhiromu (@hiromu1996)です。
-今回は、2016年11月下旬に発表された「pix2pix」@<bib>{phillip}を使って、
+今回は、2016年11月下旬に発表された「pix2pix」[1]を使って、
 絵から芸術家の脳内を再現するということに挑戦してみました。
 一体どういうことなのかというと、アメリカン・コミックのような画風で知られる、
 ポップアートの代表的な画家、ロイ・リキテンスタインの絵画から
@@ -25,10 +25,10 @@
 
 まずは、pix2pixについて、その概要を説明していきたいと思います。
 pix2pixは、画像から画像への変換を必要とする問題に対して包括的に使用できる手法として提案されており、
-@<bib>{phillip}では、@<img>{pix2pix}@<fn>{origimg}のように白黒写真のカラー化から、航空写真からの地図の生成、あるいは、
+[1]では、@<img>{pix2pix}@<fn>{origimg}のように白黒写真のカラー化から、航空写真からの地図の生成、あるいは、
 線画からの画像の復元にまで適用できることが示されています。
 //footnote[origimg][以降の画像は@<href>{https://goo.gl/2x7Iet}にもアップロードしていますので、白黒で見にくい場合はそちらを参照ください。]
-//image[pix2pix][pix2pixの適用例(@<bib>{phillip}より引用)]
+//image[pix2pix][pix2pixの適用例([1\]より引用)]
 
 このpix2pixは、「敵対的生成ネットワーク(Generative Adverserial Network, GAN)」という技術を基にしています。
 GANでは、乱数から画像を生成するGeneratorと、学習データとGeneratorが生成した画像を見分けるDiscriminatorという
@@ -43,7 +43,7 @@ Conditional GANでは、航空写真と地図、白黒写真とカラー写真�
 さらに、Discriminatorには、学習データに含まれる正しいペアと、
 入力側だけ学習データで出力側はGeneratorが生成した画像という偽のペアを与え、判別させます。
 つまり、@<img>{cgan}のようになり、これによって画像変換をGANの仕組みの中で扱えるようになるのです。
-//image[cgan][条件付き敵対的生成ネットワーク(Conditional GAN)のイメージ図(@<bib>{phillip}を基に作成)]
+//image[cgan][条件付き敵対的生成ネットワーク(Conditional GAN)のイメージ図([1\]を基に作成)]
 
 GANとConditional GANの目的関数は次の通りになります。
 比較すると、Generatorに入力側となる学習データ@<m>{x}が与えられるようになり、Discriminatorには
@@ -59,7 +59,7 @@ GANとConditional GANの目的関数は次の通りになります。
 なお、通常のGANの場合は@<m>{G^* = \arg\underset{G\}{\min\}\underset{D\}{\max\}\ \mathcal{L\}(G, D)}として、最適なGeneratorを得るように学習しますが、
 pix2pixでは@<m>{\mathcal{L\}_{L1\}(G) = \mathbb{E\}_{x,y \sim p_{data\}(x, y), z \sim p_z(z)\}[\left \| y - G(x, z) \right \|_1]}というL1正則化の項を追加して、
 @<m>{G^* = \arg\underset{G\}{\min\}\underset{D\}{\max\}\ \mathcal{L\}_{cGAN\}(G, D) + \lambda \mathcal{L\}_{L1\}(G)}としています。
-これは、生成された画像をピクセル単位で正解に近づけるような制約として作用し、GANでの生成結果がよりリアルになることが知られています@<bib>{deepak}。
+これは、生成された画像をピクセル単位で正解に近づけるような制約として作用し、GANでの生成結果がよりリアルになることが知られています[2]。
 
 さらに、pix2pixではPatchGANと呼ばれる技術を導入しています。
 これは、Discriminatorが判定をする際に、画像全体を与えるのではなく@<m>{16 \times 16}や@<m>{70 \times 70}といった小さな領域ごとに区切って与えるという手法で、
@@ -90,7 +90,7 @@ pix2pixでは@<m>{\mathcal{L\}_{L1\}(G) = \mathbb{E\}_{x,y \sim p_{data\}(x, y),
 //image[canny][Canny法による輪郭抽出の例@<raw>{|latex|\protect}@<fn>{canny}]
 //footnote[canny][@<raw>{|latex|\protect}@<href>{https://en.wikipedia.org/wiki/Canny_edge_detector}より引用]
 
-そこで、今回はNYU Depth Dataset v2@<bib>{nathan}というデータセットを使うことにします。
+そこで、今回はNYU Depth Dataset v2 [3]というデータセットを使うことにします。
 これは、Kinectで撮影した室内風景の写真とその深度情報を組み合わせたデータセットで、約41万枚の画像が含まれています。
 そして、そのうちの1449枚には人間によって付与された物体の領域情報がラベルとして含まれています。
 実際にデータを見てみると@<img>{nyudepth}のように、少しロイ・リキテンスタインのような雰囲気が見て取れるのが分かります。
@@ -356,7 +356,7 @@ $ DATA_ROOT=./datasets/poparts name=poparts which_direction=BtoA phase=val th te
 == おわりに
 
 ここまでお付き合い頂き、ありがとうございました。
-もともとは、WaveNet@<bib>{aaron}を使ったネタを書きたいと思っていたのですが、学習がかなり重くデータセットを1周するのに40時間以上掛かる始末だったので、
+もともとは、WaveNet [4]を使ったネタを書きたいと思っていたのですが、学習がかなり重くデータセットを1周するのに40時間以上掛かる始末だったので、
 どうしようかと途方に暮れていた時にpix2pixが発表され、こうした記事を書くに至りました。
 ただpix2pixも、論文を読むと、ピクセル単位で対応が取れるような変換を対象としたアルゴリズムであるということが分かりましたが@<fn>{landscape}、
 そういった変換のうち白黒写真のカラー化や航空写真からの地図の生成というような面白そうなテーマはすでにサンプルとして扱われており、どういう問題をネタにするのかが難しいところでした。
@@ -369,3 +369,13 @@ $ DATA_ROOT=./datasets/poparts name=poparts which_direction=BtoA phase=val th te
 
 次回こそは、音声+深層学習ネタで記事を書ければと思っておりますので、ご期待ください。
 また、質問などありましたら、@hiromu1996かhiromu1996[at]gmail.comまでご連絡ください。
+
+== 参考文献
+
+[1] Phillip Isola, Jun-Yan Zhu, Tinghui Zhou and Alexei A. Efros. Image-to-Image Translation Using Conditional Adversarial Networks. In arxiv, 2016.
+
+[2] Deepak Pathak, Philipp Krahenbuhl, Jeff Don- ahue, Trevor Darrell and Alexei A. Efros. Context en- coders: Feature learning by inpainting, CVPR, 2016.
+
+[3] NNathan Silberman, Derek Hoiem, Pushmeet Kohli and Rob Fergus. Indoor Segmentation and Support Inference from RGBD Images. ECCV, 2012.
+
+[4] Aaron van den Oord, Sander Dieleman, Heiga Zen, Karen Simonyan, Oriol Vinyals, Alex Graves, Nal Kalchbrenner, Andrew Senior and Koray Kavukcuoglu. WaveNet: A Generative Model for Raw Audio. In arxiv, 2016.
