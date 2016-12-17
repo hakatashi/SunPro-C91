@@ -25,8 +25,9 @@
 
 まずは、pix2pixについて、その概要を説明していきたいと思います。
 pix2pixは、画像から画像への変換を必要とする問題に対して包括的に使用できる手法として提案されており、
-@<bib>{phillip}では、@<img>{pix2pix}のように白黒写真のカラー化から、航空写真からの地図の生成、あるいは、
+@<bib>{phillip}では、@<img>{pix2pix}@<fn>{origimg}のように白黒写真のカラー化から、航空写真からの地図の生成、あるいは、
 線画からの画像の復元にまで適用できることが示されています。
+//footnote[origimg][以降の画像は@<href>{https://goo.gl/2x7Iet}にもアップロードしていますので、白黒で見にくい場合はそちらを参照ください。]
 //image[pix2pix][pix2pixの適用例(@<bib>{phillip}より引用)]
 
 このpix2pixは、「敵対的生成ネットワーク(Generative Adverserial Network, GAN)」という技術を基にしています。
@@ -49,9 +50,9 @@ GANとConditional GANの目的関数は次の通りになります。
 正しいペアの場合に@<m>{D(x, y)}偽のペアの場合に@<m>{D(x, G(x, z))}と2つの画像が与えられるようになっていることが分かるかと思います。
 //texequation{
 \begin{split}
-    \mathcal{L}_{GAN}(G, D) = & \mathbb{E}_{x \sim p_{data}(x))}[\log D(x)] \\
+    \mathcal{L}_{GAN}(G, D) & = \mathbb{E}_{x \sim p_{data}(x))}[\log D(x)] \\
     & + \mathbb{E}_{z \sim p(z)}[\log (1 - D(G(z))]\\
-    \mathcal{L}_{cGAN}(G, D) = & \mathbb{E}_{x, y \sim p_{data}(x, y))}[\log D(x, y)] \\
+    \mathcal{L}_{cGAN}(G, D) & = \mathbb{E}_{x, y \sim p_{data}(x, y))}[\log D(x, y)] \\
     & + \mathbb{E}_{x \sim p_{data}(x), z \sim p(z)}[\log (1 - D(x, G(x,z))]
 \end{split}
 //}
@@ -103,15 +104,20 @@ pix2pixでは@<m>{\mathcal{L\}_{L1\}(G) = \mathbb{E\}_{x,y \sim p_{data\}(x, y),
 //emlist[データセットの読み込み][python]{
 if __name__ == '__main__':
     if len(sys.argv) < 4:
-        print '%s [mat file] [dir to save original] [dir to save converted]'
+        print '%s [mat file] [dir to save ' + \
+              'original] [dir to save converted]'
         sys.exit(-1)
 
     mat = h5py.File(sys.argv[1])
 
-    for index, (image, label) in enumerate(zip(mat['images'], mat['labels'])):
+    for index, (image, label) in \
+            enumerate(zip(mat['images'],
+                          mat['labels'])):
         orig, conv = convert(image, label)
-        orig.save(os.path.join(sys.argv[2], '%05d.png' % index))
-        conv.save(os.path.join(sys.argv[3], '%05d.png' % index))
+        orig.save(os.path.join(sys.argv[2],
+                               '%05d.png' % index))
+        conv.save(os.path.join(sys.argv[3],
+                               '%05d.png' % index))
 //}
 
 @<code>{convert(image, label)}はデータセット内の写真と対応するラベルの情報を受け取りますが、
@@ -124,28 +130,44 @@ def convert(image, label):
     orig = Image.fromarray(image.T, 'RGB')
 
     for index in numpy.unique(label):
-        # 物体ごとに中央値をちょっと明るくした色で埋める
-        color = tuple([min(255, int(1.3 * numpy.median(image[channel][label == index])))
-                                                                for channel in range(3)])
+        # 物体ごとに中央値を
+        # ちょっと明るくした色で埋める
+        color = []
+        for channel in range(3):
+            med = numpy.median(image[channel]
+                               [label == index])
+            color.append(min(255, int(1.3 * med)))
+        color = tuple(color)
 
         # テクスチャを生成する
-        if (label == index).sum() < image.shape[1] * image.shape[2] * 0.1:
-            texture = random.choice([fill, dot, diagonal])(image.shape[1:3], color)
+        threshold = 0.1 * image.shape[1] \
+                        * image.shape[2]
+        if (label == index).sum() < threshold:
+            func = random.choice([fill, dot,
+                                  diagonal])
+            texture = func(image.shape[1:3], color)
         else:
             if sum(color) / 3 < 128:
-                color = tuple([255 - c for c in color])
+                color = tuple([255 - c
+                               for c in color])
             texture = fill(image.shape[1:3], color)
 
         # 物体の輪郭線を書く
-        contour = numpy.zeros(label.shape, dtype = numpy.uint8)
-        contour[label == index] = 255
-        contour = Image.fromarray(contour.T, 'P').convert('RGB')
-        contour = numpy.asarray(contour.filter(ImageFilter.CONTOUR)).T
+        cont = numpy.zeros(label.shape,
+                           dtype = numpy.uint8)
+        cont[label == index] = 255
+        cont = Image.fromarray(cont.T, 'P')
+        cont = cont.convert('RGB')
+        cont = cont.filter(ImageFilter.CONTOUR)
+        cont = numpy.asarray(cont).T
 
         # テクスチャと輪郭線を載せる
         for channel in range(3):
-            image[channel][label == index] = texture[channel][label == index]
-            image[channel] = numpy.minimum(image[channel], contour[channel])
+            image[channel][label == index] = \
+                    texture[channel][label == index]
+            image[channel] = \
+                numpy.minimum(image[channel],
+                              cont[channel])
 
     conv = Image.fromarray(image.T, 'RGB')
 
@@ -153,19 +175,19 @@ def convert(image, label):
 //}
 
 まず、4行目のforによって、画像に含まれる物体のそれぞれについて同じ処理を繰り返すようにしています。
-そして、ロイ・リキテンスタインの絵画では物体がそれぞれ1色で塗られていることから、6~7行目で物体を塗りつぶす色を決定しています。
+そして、ロイ・リキテンスタインの絵画では物体がそれぞれ1色で塗られていることから、7~12行目で物体を塗りつぶす色を決定しています。
 ここでは、物体の領域に含まれる色の中央値を取った上で、原色に近い色にするためにRGBをそれぞれ1.3倍するという処理を行っています。
 
-そこから、9~15行目で決定した色のテクスチャをランダムに生成しています。
+そこから、15~25行目で決定した色のテクスチャをランダムに生成しています。
 ここで、@<code>{fill(shape, color)}は与えられたサイズを与えられた色で埋めた画像を生成する関数、
 @<code>{dot(shape, color)}は水玉で埋めた画像を生成する関数、@<code>{diagonal(shape, color)}は斜線で埋めた画像を生成する関数とします。
 つまり、後で物体に該当する部分だけ切り抜いて使うために、画像サイズと同じテクスチャを作っておくという処理になっています。
 また、ロイ・リキテンスタインの絵画を見ると、壁や床などの大きな領域では幾何学的なテクスチャがあまり用いられていないことから、
 物体の領域が画像全体の10%以下の場合のみに水玉や斜線を用いるようにしています。
 
-そして、18~21行目で物体の輪郭線を生成しています。
+そして、28~34行目で物体の輪郭線を生成しています。
 ここでは、物体の領域だけを白く塗った白黒画像を作った上で、PILの@<code>{ImageFilter.CONTOUR}というフィルタ機能によって輪郭線を得ています。
-最後に、24~27行目でRGBのそれぞれについて、物体の領域に該当するテクスチャを切り抜いて貼り付け、
+最後に、37~42行目でRGBのそれぞれについて、物体の領域に該当するテクスチャを切り抜いて貼り付け、
 さらにその上から輪郭線を載せるという処理を行っています。
 
 テクスチャを生成する関数は、以下の通りとなっています。
@@ -178,7 +200,8 @@ def fill(size, color):
 
 def dot(size, color):
     radius = random.randint(3, 5)
-    interval = random.randint(radius + 2, int(radius * 1.7))
+    interval = random.randint(radius + 2,
+                              int(radius * 1.7))
 
     img = Image.new('RGB', size, (255, 255, 255))
     draw = ImageDraw.Draw(img)
@@ -186,7 +209,8 @@ def dot(size, color):
     for x in range(0, size[0], interval):
         for y in range(0, size[1], interval):
             y += interval * (x / interval % 2) / 2
-            draw.ellipse((x, y, x + radius, y + radius), color)
+            region = (x, y, x + radius, y + radius)
+            draw.ellipse(region, color)
 
     return numpy.asarray(img).T
 
@@ -201,9 +225,12 @@ def diagonal(size, color):
         y = x / math.tan(angle / math.pi)
         draw.line((x, 0, 0, y), color, width)
 
-    for y in range(width * 2 - size[0] % (width * 2), size[1], width * 2):
-        x = size[0] - (size[1] - y) * math.tan(angle / math.pi)
-        draw.line((size[0], y, x, size[1]), color, width)
+    start = width * 2 - size[0] % (width * 2)
+    for y in range(start, size[1], width * 2):
+        x = size[0] - (size[1] - y) \
+            * math.tan(angle / math.pi)
+        draw.line((size[0], y, x, size[1]),
+                  color, width)
 
     return numpy.asarray(img).T
 //}
@@ -224,7 +251,10 @@ $ test=`seq 0 1448 | shuf | head -n 290 | xargs printf "%05d.png\n"`
 $ for dir in orig label
 > do
 >     mkdir $dir/train $dir/test
->     for file in $test; do mv $dir/$file $dir/test; done
+>     for file in $test
+>     do
+>         mv $dir/$file $dir/test
+>     done
 >     mv $dir/*.png $dir/train
 > done
 //}
@@ -242,23 +272,30 @@ interval = 20
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        print '%s [input image] [output image]' % sys.argv[0]
+        print '%s [input image] [output image]' % \
+                                        sys.argv[0]
         sys.exit(-1)
 
     img = Image.open(sys.argv[1])
-    ratio = max([float(target[i]) / img.size[i] for i in range(2)])
-    size = tuple(map(lambda x: int(x * ratio), img.size))
+    ratio = max([float(target[i]) / img.size[i]
+                 for i in range(2)])
+    size = tuple(map(lambda x: int(x * ratio),
+                     img.size))
     img = img.resize(size, Image.ANTIALIAS)
 
     name, ext = os.path.splitext(sys.argv[2])
     index = 0
 
-    for x in range(0, (size[0] - target[0]) / 2 + 1, interval):
-        for y in range(0, (size[1] - target[1]) / 2 + 1, interval):
-            crop = img.crop((x, y, x + target[0], y + target[1]))
-            crop.save('%s_%02d%s' % (name, index, ext))
-            index += 1
+    xlim = (size[0] - target[0]) / 2 + 1
+    ylim = (size[1] - target[1]) / 2 + 1
 
+    for x in range(0, xlim, interval):
+        for y in range(0, ylim, interval):
+            crop = img.crop((x, y, x + target[0],
+                             y + target[1]))
+            crop.save('%s_%02d%s' %
+                      (name, index, ext))
+            index += 1
 //}
 
 これを@<code>{crop.py}として以下のような操作を行います。
@@ -267,7 +304,10 @@ if __name__ == '__main__':
 
 //cmd{
 $ mkdir orig/val label/val
-$ for file in `ls lichtenstein`; do python crop.py lichtenstein/$file orig/val/$file; done
+$ for file in `ls lichtenstein`
+> do
+>     python crop.py lichtenstein/$file orig/val/$file
+> done
 $ cp orig/val/* label/val/
 //}
 
@@ -279,15 +319,6 @@ $ cp orig/val/* label/val/
 $ mkdir poparts
 $ python combine_A_and_B.py --fold_A orig --fold_B label --fold_AB poparts
 //}
-
-===[column] 記事中で用いている画像について
-
-次章で変換結果の画像をいくつか掲載していますが、印刷版ではすべて白黒となってしまうために、
-それぞれの違いがよくわからないというケースもあるかと思います。
-つきましては、@<href>{https://goo.gl/2x7Iet}に本記事で用いた画像の一部を
-すべてアップロードしておりますので、適宜ご参照ください。
-
-===[/column]
 
 == 学習させる
 
