@@ -30,7 +30,7 @@ pix2pixは、画像から画像への変換を必要とする問題に対して�
 //footnote[origimg][以降の画像は@<href>{https://goo.gl/2x7Iet}にもアップロードしていますので、白黒で見にくい場合はそちらを参照ください。]
 //image[pix2pix][pix2pixの適用例([1\]より引用)]
 
-このpix2pixは、「敵対的生成ネットワーク(Generative Adverserial Network, GAN)」という技術を基にしています。
+このpix2pixは、「敵対的生成ネットワーク(Generative Adversarial Network, GAN)」という技術を基にしています。
 GANでは、乱数から画像を生成するGeneratorと、学習データとGeneratorが生成した画像を見分けるDiscriminatorという
 2つのニューラルネットワークを競争させながら学習することで、学習データに似たような画像を自動生成することが可能となっています。
 例えるなら、Generatorは贋作画家、Discriminatorは鑑定士で、@<img>{gan}のように互いに勝負を繰り返させることで、
