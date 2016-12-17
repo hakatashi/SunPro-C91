@@ -284,7 +284,7 @@ epubmaker:
 texstyle: reviewmacro
 
 # LaTeX用のdocumentclassを指定する
-texdocumentclass: ["jsbook", "uplatex,b5j"]
+texdocumentclass: ["jsbook", "uplatex,a4j,twocolumn"]
 
 # LaTeX用のコマンドを指定する
 texcommand: "uplatex"
