@@ -1,8 +1,8 @@
-import scipy.io.wavfile as wav
-from python_speech_features import mfcc
+import librosa
+import numpy
 
 def getMfcc(filename):
-    (rate, sig) = wav.read(filename)
-    return mfcc(sig, rate)
+    y, sr = librosa.load(filename)
+    return librosa.feature.mfcc(y=y, sr=sr)
 
 maki = getMfcc('maki.wav')

@@ -18,5 +18,10 @@ do
     for song in "${songs[@]}"
     do
         ffmpeg -i "$member/$song.m4a" "$member/$song.wav"
+        python separation.py "$member/$song.wav" "$member/$song-voice.wav" /dev/null
     done
+done
+for member in "${members[@]}"
+do
+    ffmpeg -i "$member/もぎゅっとloveで接近中-voice.wav" -ss 15 -t 15 "$member/もぎゅっとloveで接近中-short-voice.wav"
 done
