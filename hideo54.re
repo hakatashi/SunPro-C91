@@ -47,7 +47,24 @@
 
 たとえば、「あー」という声の波形を見てみましょう。ここでは、アニメ1期第4話「まきりんぱな」での、小泉花陽さんと西木野真姫さんの発声練習の部分から短時間分を切り抜いた声を見てみます。次のようなPythonコードを書きました:
 
-//source[sources/hideo54/a.py]{
+//list[a][「あー」の波形][python]{
+import wave
+import numpy
+import pylab
+
+def dataFromWAV(filename):
+    f = wave.open(filename, 'r')
+    buf = f.readframes(f.getnframes())
+    return numpy.frombuffer(buf, dtype='int16')
+
+fig, (l, r) = pylab.subplots(ncols=2, figsize=(15, 5))
+l.plot(dataFromWAV('maki.wav'))
+l.set_title('MAKI')
+l.set_xlim(15000, 16000)
+r.plot(dataFromWAV('hanayo.wav'))
+r.set_title('HANAYO')
+r.set_xlim(15000, 16000)
+fig.savefig('a.png')
 //}
 
 切り取りの都合で横軸を15000からにしてます。以上を実行して生成される画像が以下になります。
@@ -61,7 +78,15 @@
 
 //footnote[fyi][ちなみに、「はじめに」で述べた、学校の物理の授業で見せてもらったのはこれです。]
 
-//source[sources/hideo54/mfcc.py]{
+//list[mfcc][librosaを使ったMFCCの算出][python]{
+import librosa
+import numpy
+
+def getMfcc(filename):
+    y, sr = librosa.load(filename)
+    return librosa.feature.mfcc(y=y, sr=sr)
+
+maki = getMfcc('maki.wav')
 //}
 
 超簡単ですね。とりあえず、様々な曲からMFCCを得るため、次の節でひとまずサンプルを集めます。
@@ -87,7 +112,61 @@
 //footnote[why-30s][iTunes Storeだと90秒の試聴ができるんですが、公開されているAPIだと30秒しか落とせないそうです。(Apple社員の人がstack overflowで言ってた @<href>{http://stackoverflow.com/a/14620405} 。)悲しいなあ。]
 //footnote[itunes-search-api][@<href>{https://affiliate.itunes.apple.com/resources/documentation/itunes_search_api_jp/}]
 
-//source[sources/hideo54/solo-live.py]{
+//list[solo-live][各Solo live!のダウンロード][python]{
+import os
+import requests
+
+artists = ['HONOKA', 'ELI', 'KOTORI', 'UMI', 'RIN', 'MAKI', 'NOZOMI', 'HANAYO', 'NICO']
+songs = [
+    ['もぎゅっと"love"で接近中!', 'もぎゅっとloveで接近中'],
+    ['愛してるばんざーい!', '愛してるばんざーい'],
+    ['Wonderful Rush', 'Wonderful-Rush'],
+    ['Oh,Love&Peace!', 'Oh-Love-and-Peace'],
+    ['僕らは今のなかで', '僕らは今のなかで'],
+    ['WILD STARS', 'WILD-STARS'],
+    ['きっと青春が聞こえる', 'きっと青春が聞こえる'],
+    ['輝夜の城で踊りたい', '輝夜の城で踊りたい'],
+    ['Wonder zone', 'Wonder-zone'],
+    ['No brand girls', 'No-brand-girls'],
+    ['START:DASH!!', 'START-DASH']
+]
+
+def download(url, filename):
+    res = requests.get(url, timeout=10)
+    with open(filename, 'wb') as f:
+        f.write(res.content)
+
+timeouts = []
+
+for artist in artists:
+    os.mkdir(artist)
+    for song in songs:
+        print('Downloading: %s(%s Mix)' % (song[0], artist))
+        baseurl = 'https://itunes.apple.com/search'
+        params = {
+            'term': '%s(%s Mix)' % (song[0], artist),
+            'country': 'JP',
+            'media': 'music',
+            'entry': 'song'
+        }
+        res = requests.get(baseurl, params=params)
+        previewUrl = res.json()['results'][0]['previewUrl']
+        try:
+            download(previewUrl, '%s/%s.m4a' % (artist, song[1]))
+        except requests.exceptions.ReadTimeout:
+            print('Timeout: %s(%s Mix)' % (song[0], artist))
+            timeouts.append({
+                'url': previewUrl,
+                'song': song,
+                'artist': artist
+            })
+
+for timeout in timeouts:
+    print('Downloading again: %s(%s Mix)' % (timeout['song'][0], timeout['artist']))
+    try:
+        download(timeout['url'], '%s/%s.m4a' % (timeout['artist'], timeout['song'][1]))
+    except requests.exceptions.ReadTimeout:
+        print('Timeout again, please download manually: ' + timeout['url'])
 //}
 
 よくわからないのですが、たまにタイムアウトするので、タイムアウトした分はもう1度落とすようにしています。それでも無理なものは数分後くらいにタイムアウトが解消されたら適当にcurlとかで拾ってやります。
@@ -102,7 +181,34 @@
 
 //footnote[singingvoiceseparationrpca][@<href>{https://github.com/posenhuang/singingvoiceseparationrpca}]
 
-//source[sources/towav.sh]{
+//list[towav][wavに変換し音声分離][bash]{
+members=(HONOKA ELI KOTORI UMI RIN MAKI NOZOMI HANAYO NICO)
+songs=(
+    'もぎゅっとloveで接近中'
+    '愛してるばんざーい'
+    'Wonderful-Rush'
+    'Oh-Love-and-Peace'
+    '僕らは今のなかで'
+    'WILD-STARS'
+    'きっと青春が聞こえる'
+    '輝夜の城で踊りたい'
+    'Wonder-zone'
+    'No-brand-girls'
+    'START-DASH'
+)
+
+for member in "${members[@]}"
+do
+    for song in "${songs[@]}"
+    do
+        ffmpeg -i "$member/$song.m4a" "$member/$song.wav"
+        python separation.py "$member/$song.wav" "$member/$song-voice.wav" /dev/null
+    done
+done
+for member in "${members[@]}"
+do
+    ffmpeg -i "$member/もぎゅっとloveで接近中-voice.wav" -ss 15 -t 15 "$member/もぎゅっとloveで接近中-short-voice.wav"
+done
 //}
 
 ついでに色々やっているので、少し説明:
@@ -122,7 +228,7 @@
 
 //footnote[why-svm][scikit-learnの各機能については、 @<href>{http://qiita.com/ynakayama/items/9c5867b6947aa41e9229} が参考になりました。初心者の身としては、インターネット上に資料が多いというのもSVMにした理由の1つです。]
 
-#@# //source[sources/hideo54/main.py]{
+#@# //list[main][学習][python]{
 #@# これは今書いて/動かしています
 #@# //}
 
