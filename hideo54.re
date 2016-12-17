@@ -385,5 +385,5 @@ gamma値	正答率
 
 斧は以下にお投げください:
 
-    * Email: @<tt>{contact@hideo54.com}
+    * Email: contact@hideo54.com
     * Twitter: @hideo54
