@@ -1,4 +1,4 @@
-= μ'sメンバーの声を学習して誰が歌っているかを当てる
+= 機械学習でμ'sの声を識別する
 
 //raw[|latex|\\chapterauthor{hideo54}]
 
@@ -228,39 +228,128 @@ done
 
 //footnote[why-svm][scikit-learnの各機能については、 @<href>{http://qiita.com/ynakayama/items/9c5867b6947aa41e9229} が参考になりました。初心者の身としては、インターネット上に資料が多いというのもSVMにした理由の1つです。]
 
-#@# //list[main][学習][python]{
-#@# これは今書いて/動かしています
-#@# //}
+まず、各サンプルのMFCCの値を求めます。
 
-#@# 結果はこのようになりました:
+//list[main/mfcc][各MFCC値の算出][python]{
+import scipy.io.wavfile as wav
+import librosa
+from sklearn.svm import SVC
+import numpy
 
+def getMfcc(filename):
+    y, sr = librosa.load(filename)
+    return librosa.feature.mfcc(y=y, sr=sr)
 
-#@# 無事動いたら結果を貼ります
-#@# //table[results][No brand girls 歌手推測結果]{
-#@# 正答      推測結果
-#@# ------------
-#@# 高坂穂乃果さん
-#@# 絢瀬絵里さん
-#@# 南ことりさん
-#@# 園田海未さん
-#@# 星空凛さん
-#@# 西木野真姫さん
-#@# 東條希さん
-#@# 小泉花陽さん
-#@# 矢澤にこさん
-#@# //}
+artists = ['HONOKA', 'ELI', 'KOTORI', 'UMI', 'RIN', 'MAKI', 'NOZOMI', 'HANAYO', 'NICO']
+songs = [
+    'もぎゅっとloveで接近中-short',
+    '愛してるばんざーい',
+    'Wonderful-Rush',
+    'Oh-Love-and-Peace',
+    '僕らは今のなかで',
+    'WILD-STARS',
+    'きっと青春が聞こえる',
+    '輝夜の城で踊りたい',
+    'Wonder-zone',
+    'START-DASH'
+]
 
-#@# 結果に対する感想を述べる
+song_training = []
+artist_training = []
+for artist in artists:
+    print('Reading data of %s...' % artist)
+    for song in songs:
+        mfcc = getMfcc('%s/%s-voice.wav' % (artist, song))
+        song_training.append(mfcc.T)
+        label = numpy.full((mfcc.shape[1], ), artists.index(artist), dtype=numpy.int)
+        artist_training.append(label)
+song_training = numpy.concatenate(song_training)
+artist_training = numpy.concatenate(artist_training)
+//}
+
+次に、これを学習させた上で、"No brand girls"の各ソロバージョンを与え、誰が歌っているのか推測させます。
+
+当初、以下のようなコードを書いていました:
+
+//list[main/first][学習と予測][python]{
+svc = SVC()
+svc.fit(song_training, artist_training)
+print('Learning Done')
+
+for artist in artists:
+    mfcc = getMfcc('%s/No-brand-girls-voice.wav' % artist)
+    prediction = svc.predict(mfcc.T)
+    counts = numpy.bincount(prediction)
+    result = artists[numpy.argmax(counts)]
+    print('No brand girls(%s Mix) recognized as sung by %s.' % (artist, result))
+//}
+
+学習は、各パラメータの値をデフォルトのままにしていました。
+また、推測は、曲について得られたMFCCの各要素についてメンバーの推測を立て、最も多い推測をその曲の推測とするようにしていました。
+
+その結果、全ての推測が園田海未さんになってしまいました。そこでGrid searchを使ってパラメータ最適化を行おうかと思ったのですが、hiromuに相談したところ、Grid searchはかなり重いということと、gamma値を調整すると良い感じになりそうだということを教わりました。
+さらに推測方法は、曲自体のバイアスを打ち消すため、全員の平均を求めておいて、各曲について推定結果と平均との差が最大になるものを選ぶ方法を取ると良いと教わり、コードで返してくれました。
+
+いやー、hiromuがいなかったらこの原稿は絶対落ちていましたね...
+
+以上の要領で色々調整をして最も正答率が高くなったコードが以下のものです。
+
+//list[main/final][調整後の学習と予測][python]{
+clf = SVC(C=1, gamma=1e-4)
+clf.fit(song_training, artist_training)
+print('Learning Done')
+
+counts = []
+
+for artist in artists:
+    mfcc = getMfcc('%s/No-brand-girls-voice.wav' % artist)
+    prediction = clf.predict(mfcc.T)
+    counts.append(numpy.bincount(prediction))
+
+counts = numpy.vstack(counts)
+
+for artist, count in zip(artists, counts):
+    result = artists[numpy.argmax(count - count.mean(axis=0))]
+    print('No brand girls(%s Mix) recognized as sung by %s.' % (artist, result))
+//}
+
+この結果はこうなります:
+
+//table[results][No brand girls 歌手推測結果 (敬称略)]{
+正答	推測結果
+------------
+高坂穂乃果	高坂穂乃果
+絢瀬絵里	絢瀬絵里
+南ことり	南ことり
+園田海未	園田海未
+星空凛	東條希
+西木野真姫	西木野真姫
+東條希	東條希
+小泉花陽	小泉花陽
+矢澤にこ	矢澤にこ
+//}
+
+全完...! やったね!
+
+gamma値ごとの正答率はこんな感じでした。
+//table[gamma][gamma値調整による正答率]{
+gamma値	正答率
+------------
+1	1/9
+1e-4	9/9
+1e-5	8/9
+1e-6	6/9
+//}
+
+ちなみに、1e-5の時に唯一当たらなかった推測は、星空凛さんを東條希さんとした間違いでした。気持ちはわからんでもない...?
 
 == おわりに
 
-実は、題材を自分で決めて機械学習するのはこれが初めてでした。圧倒的経験の少なさ故苦労が多かった...。相談に乗ってくれたhiromuには激感謝。
+実は、題材を自分で決めて機械学習するのはこれが初めてでした。圧倒的経験の少なさ故苦労が多かった...。相談に乗ってくれたhiromuには激感謝。hiromuはこの道のプロというイメージがありますが、これに限らず中学の時から今まで、hiromuに締切前に助けてもらったことばかりでした。頼もしい。
 
-慣れていないことを締め切りのある原稿のネタにするんじゃない、という教訓も得られたものの、結構楽しめたかなあと思います。機械学習ムズいけど楽しいので、勉強していきたいです。(現状ライブラリを叩いているだけに等しいなので理論の理解も深めていきたい)
+慣れていないことを締め切りのある原稿のネタにするんじゃない、という教訓も得られたものの、好きなことを題材にしたということもあって、結構楽しめたかなあと思います。機械学習ムズいけど楽しいので、勉強していきたいです。(現状ライブラリを叩いているだけに等しいなのでやがて理論の理解も深めていきたい)
 
-今回は時間も知識も技術力も全くなかったためやりませんでしたが、複数人歌っている曲の場合も、誰と誰が歌っているかを推測できたりするんでしょうかね? 時間があれば調べてみたいです。
-
-期末試験の都合で最終締め切りに間に合わなかった(というか実は1字も書いてなかった)ものの、それでも12/17という超ギリギリまで待ってくれた会長のhakatashiには本当に感謝しています...!
+期末試験の都合上、設定されていた最終締切の時点で1字も書いてなかったものの、それでも12/18という超ギリギリまで待ってくれた会長のhakatashiには本当に感謝しています...!
 
 ここまで読んでいただきありがとうございました!
 
