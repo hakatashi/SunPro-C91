@@ -57,7 +57,7 @@ def dataFromWAV(filename):
     buf = f.readframes(f.getnframes())
     return numpy.frombuffer(buf, dtype='int16')
 
-fig, (l, r) = pylab.subplots(ncols=2, figsize=(15, 5))
+fig, (l,r) = pylab.subplots(ncols=2,figsize=(15,5))
 l.plot(dataFromWAV('maki.wav'))
 l.set_title('MAKI')
 l.set_xlim(15000, 16000)
@@ -95,7 +95,7 @@ maki = getMfcc('maki.wav')
 
 前述の通り、各メンバーがソロで歌っている「ラブライブ！ Solo Live!」というアルバムがあります。そのうち全アルバムに共通している曲(全員のソロが用意されている曲)は以下の11曲です:
 
-    * もぎゅっと“love”で接近中!
+    * もぎゅっと“love”で接近中！
     * 愛してるばんざーい！
     * Wonderful Rush
     * Oh,Love&Peace!
@@ -116,9 +116,11 @@ maki = getMfcc('maki.wav')
 import os
 import requests
 
-artists = ['HONOKA', 'ELI', 'KOTORI', 'UMI', 'RIN', 'MAKI', 'NOZOMI', 'HANAYO', 'NICO']
+artists = ['HONOKA', 'ELI', 'KOTORI', 'UMI', 'RIN',
+    'MAKI', 'NOZOMI', 'HANAYO', 'NICO']
 songs = [
-    ['もぎゅっと"love"で接近中!', 'もぎゅっとloveで接近中'],
+    ['もぎゅっと"love"で接近中!',
+        'もぎゅっとloveで接近中'],
     ['愛してるばんざーい!', '愛してるばんざーい'],
     ['Wonderful Rush', 'Wonderful-Rush'],
     ['Oh,Love&Peace!', 'Oh-Love-and-Peace'],
@@ -141,20 +143,25 @@ timeouts = []
 for artist in artists:
     os.mkdir(artist)
     for song in songs:
-        print('Downloading: %s(%s Mix)' % (song[0], artist))
+        print('Downloading: %s(%s Mix)'
+            % (song[0], artist))
         baseurl = 'https://itunes.apple.com/search'
         params = {
-            'term': '%s(%s Mix)' % (song[0], artist),
+            'term': '%s(%s Mix)'
+                % (song[0], artist),
             'country': 'JP',
             'media': 'music',
             'entry': 'song'
         }
         res = requests.get(baseurl, params=params)
-        previewUrl = res.json()['results'][0]['previewUrl']
+        result = res.json()['results'][0]
+        previewUrl = result['previewUrl']
         try:
-            download(previewUrl, '%s/%s.m4a' % (artist, song[1]))
+            download(previewUrl,
+                '%s/%s.m4a' % (artist, song[1]))
         except requests.exceptions.ReadTimeout:
-            print('Timeout: %s(%s Mix)' % (song[0], artist))
+            print('Timeout: %s(%s Mix)'
+                % (song[0], artist))
             timeouts.append({
                 'url': previewUrl,
                 'song': song,
@@ -162,11 +169,18 @@ for artist in artists:
             })
 
 for timeout in timeouts:
-    print('Downloading again: %s(%s Mix)' % (timeout['song'][0], timeout['artist']))
+    url = timeout['url']
+    original_title = timeout['song'][0]
+    short_title = timeout['song'][1]
+    artist = timeout['artist']
+    print('Downloading again: %s(%s Mix)'
+        % (original_title, artist))
     try:
-        download(timeout['url'], '%s/%s.m4a' % (timeout['artist'], timeout['song'][1]))
+        song = download(url, '%s/%s.m4a'
+            % (artist, short_title))
     except requests.exceptions.ReadTimeout:
-        print('Timeout again, please download manually: ' + timeout['url'])
+        print('Timeout again, download manually: '
+            + timeout['url'])
 //}
 
 よくわからないのですが、たまにタイムアウトするので、タイムアウトした分はもう1度落とすようにしています。それでも無理なものは数分後くらいにタイムアウトが解消されたら適当にcurlとかで拾ってやります。
@@ -201,13 +215,18 @@ for member in "${members[@]}"
 do
     for song in "${songs[@]}"
     do
-        ffmpeg -i "$member/$song.m4a" "$member/$song.wav"
-        python separation.py "$member/$song.wav" "$member/$song-voice.wav" /dev/null
+        ffmpeg -i "$member/$song.m4a" \
+            "$member/$song.wav"
+        python separation.py "$member/$song.wav" \
+            "$member/$song-voice.wav" /dev/null
     done
 done
 for member in "${members[@]}"
 do
-    ffmpeg -i "$member/もぎゅっとloveで接近中-voice.wav" -ss 15 -t 15 "$member/もぎゅっとloveで接近中-short-voice.wav"
+    ffmpeg -i
+        "$member/もぎゅっとloveで接近中-voice.wav" \
+        -ss 15 -t 15 \
+        "$member/もぎゅっとloveで接近中-short-voice.wav"
 done
 //}
 
@@ -215,7 +234,7 @@ done
 
     * まずffmpegを用いてm4aをwavに変換
     * rpca_svsプログラム(separation.py)を用いてほぼ音声のみを含むファイルを生成
-    * 「もぎゅっとloveで接近中」のみ、試聴曲30秒のうち半分は歌ってないので、後半15秒のみにカット
+    * 「もぎゅっと“love”で接近中！」のみ、試聴曲30秒のうち半分は歌ってないので、後半15秒のみにカット
 
 分離された音声を試しに1つ聞いてみるとわかるのですが、結構いい感じに音声だけ出ていてすごい。
 
@@ -259,9 +278,11 @@ artist_training = []
 for artist in artists:
     print('Reading data of %s...' % artist)
     for song in songs:
-        mfcc = getMfcc('%s/%s-voice.wav' % (artist, song))
+        mfcc = getMfcc('%s/%s-voice.wav'
+            % (artist, song))
         song_training.append(mfcc.T)
-        label = numpy.full((mfcc.shape[1], ), artists.index(artist), dtype=numpy.int)
+        label = numpy.full((mfcc.shape[1], ),
+            artists.index(artist), dtype=numpy.int)
         artist_training.append(label)
 song_training = numpy.concatenate(song_training)
 artist_training = numpy.concatenate(artist_training)
@@ -277,11 +298,14 @@ svc.fit(song_training, artist_training)
 print('Learning Done')
 
 for artist in artists:
-    mfcc = getMfcc('%s/No-brand-girls-voice.wav' % artist)
+    mfcc = getMfcc('%s/No-brand-girls-voice.wav'
+        % artist)
     prediction = svc.predict(mfcc.T)
     counts = numpy.bincount(prediction)
     result = artists[numpy.argmax(counts)]
-    print('No brand girls(%s Mix) recognized as sung by %s.' % (artist, result))
+    original_title = 'No brand girls(%s Mix)' % artist
+    print('%s recognized as sung by %s.'
+        % (original_title, result))
 //}
 
 学習は、各パラメータの値をデフォルトのままにしていました。
@@ -302,15 +326,20 @@ print('Learning Done')
 counts = []
 
 for artist in artists:
-    mfcc = getMfcc('%s/No-brand-girls-voice.wav' % artist)
+    mfcc = getMfcc('%s/No-brand-girls-voice.wav'
+        % artist)
     prediction = clf.predict(mfcc.T)
     counts.append(numpy.bincount(prediction))
 
 counts = numpy.vstack(counts)
 
 for artist, count in zip(artists, counts):
-    result = artists[numpy.argmax(count - count.mean(axis=0))]
-    print('No brand girls(%s Mix) recognized as sung by %s.' % (artist, result))
+    result = artists[numpy.argmax(
+        count-count.mean(axis=0)
+    )]
+    original_title = 'No brand girls(%s Mix)' % artist
+    print('%s recognized as sung by %s.'
+        % (original_title, result))
 //}
 
 この結果はこうなります:
