@@ -2,9 +2,9 @@ PREDEF:
   - intro.re
 
 CHAPS:
-  - hakatashi.re
   - hideo54.re
   - hiromu.re
+  - hakatashi.re
 
 POSTDEF:
   - postscript.re
