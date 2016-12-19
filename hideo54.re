@@ -336,7 +336,7 @@ for artist, count in zip(artists, counts):
         % (original_title, result))
 //}
 
-この結果は次のようになります。
+この結果は@<table>{results}のようになりました。
 
 //table[results][No brand girls 歌手推測結果(敬称略)]{
 正答	推測結果
@@ -354,7 +354,7 @@ for artist, count in zip(artists, counts):
 
 全完……！ やったね！
 
-gamma値ごとの正答率は次のようになりました。
+gamma値ごとの正答率は@<table>{gamma}のようになりました。
 
 //table[gamma][gamma値調整による正答率]{
 gamma値	正答率
