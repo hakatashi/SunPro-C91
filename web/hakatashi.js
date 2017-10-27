@@ -14,7 +14,7 @@ config.page = {
     content: fs.readFileSync('../webroot/hakatashi.html'),
     pdf: {
       link: 'hakatashi.pdf',
-      size: 0.8,
+      size: 0.5,
     },
     prev: {
       link: 'hiromu.html',
