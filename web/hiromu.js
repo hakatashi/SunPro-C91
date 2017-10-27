@@ -24,6 +24,7 @@ config.page = {
       link: 'hakatashi.html',
       title: 'ISUCON 2016 参戦記',
     },
+	og_image: 'images/hiromu/result.png',
 };
 
 module.exports = config;

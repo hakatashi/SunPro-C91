@@ -2,6 +2,9 @@ meta(charset="utf-8")
 meta(http-equiv="X-UA-Compatible", content="IE=edge")
 meta(name="viewport", content="width=device-width, initial-scale=1.0, maximum-scale=1.0")
 meta(name="author", content=config.author)
+meta(property="og:image", content=page.og_image)
+meta(property="og:type", content="article")
+meta(property="og:title", content=page.plain_title !== '' ? `${page.plain_title} - ${config.title}` : config.title)
 
 link(rel="icon", type="image/png", href="favicon.png")
 
@@ -13,6 +16,9 @@ title
             = config.title
 block description
     meta(name="description", content=config.description)
+    meta(property="og:description", content=config.description)
+
+meta(property="og:url", content=`${config.base}${page.url}`)
 
 link(rel="stylesheet", href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css")
 link(rel="stylesheet", href="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0-alpha1/katex.min.css")

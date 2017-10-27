@@ -20,6 +20,7 @@ config.page = {
       link: 'hiromu.html',
       title: '深層学習で芸術家の脳内を再現する',
     },
+	og_image: 'images/hideo54/a.png',
 };
 
 module.exports = config;
