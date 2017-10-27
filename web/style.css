@@ -147,3 +147,7 @@ p {
 		height: auto;
 	}
 }
+
+span.equation {
+    margin: 0 0.3em;
+}
