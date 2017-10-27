@@ -4,6 +4,8 @@ module.exports = {
     author: 'SunPro',
     email: 'admin@sunpro.io',
     description: 'コミックマーケット91にて発行された同人誌『SunPro会誌 2017』です。現在無料公開中。「機械学習でμ’s の声を識別する」「深層学習で芸術家の脳内を再現する」「ISUCON 2016 参戦記」の3本でお届けします。',
+    hatena_base: 'http://b.hatena.ne.jp/entry/s/sunpro.io/C91/',
+	base: 'https://sunpro.io/C91/',
   },
   page: {
     url: '',

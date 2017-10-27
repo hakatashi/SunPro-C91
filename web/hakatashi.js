@@ -1,63 +1,25 @@
-{
-  config: {
-    title: 'SunPro 2016技術書典',
-    author: 'hakatashi / Mine02C4',
-    email: 'admin@sunpro.io',
-    description: '2016年、インターネットが日本中のあらゆる人間に行き渡るようになってから、すでに10年単位の時間が経過しています。今日においてインターネットを支えるネットワーク技術が重要であることは言うまでもありませんが、実際にネットワークでどのタイミングで何が起こり、どれくらいの時間が費やされるのかということを身を持って体感している人は、たとえネットワークに精通している人でも少ないのではないでしょうか？この記事では、1秒というわずかな時間を1年にまで拡大し、ネットワーク上で何が起こっているかを人間スケールでざっくりと解説していきます。',
-  },
-  page: {
-    url: 'hakatashi.html',
-    plain_title: 'もしインターネットの1秒が1年だったら',
-    title: 'もし<wbr>インターネットの<wbr>1秒が<wbr>1年だったら',
-    subtitle: 'hakatashi / Mine02C4',
+const config = require('./base-config.js');
+const fs = require('fs');
+
+Object.assign(config.config, {
+	author: 'hakatashi',
+	description: 'まえがきぶりの博多市です。本当はもうちょっとウィットに富んだ記事を執筆する予定だったのですが、残念ながら個人的な事情でまとまった時間が取れなかったため、執筆できませんでした。が、個人的に書く意欲はあるので、4月9日に開催が決まった技術書典2にもし受かったらそこで蔵出ししたいと思います。というわけで、今回はSunProのメンバーでISUCON6に参加したときの記録を綴りたいと思います。予選参加以前の模擬試合から本戦までの記録をわりと綿密に書いたので参戦記にしては長くなってしまいましたが、そのぶん読んでためになる文章になっていると思います。今後ISUCONに参加する人もそうでない人も、ぜひぜひご覧ください。'
+});
+
+config.page = {
+	url: 'hakatashi.html',
+	plain_title: 'ISUCON 2016 参戦記',
+	title: 'ISUCON <wbr>2016 <wbr>参戦記',
+	subtitle: 'hakatashi',
     content: fs.readFileSync('../webroot/hakatashi.html'),
     pdf: {
       link: 'hakatashi.pdf',
-      size: 0.5,
+      size: 0.8,
     },
     prev: {
       link: 'hiromu.html',
-      title: 'ディープラーニングでご飯を作ってみる',
+      title: '深層学習で芸術家の脳内を再現する',
     },
-    next: {
-      link: 'hideo54.html',
-      title: 'まだReactionで消耗してるの?',
-    },
-  },
-  theme: {
-    'navbar-links': {
-      'Home': undefined,
-      'GitHub': 'https://github.com/hakatashi/SunPro-techbookfest',
-    },
-    footer: [{
-      link: 'hiromu.html',
-      title: 'ディープラーニングでご飯を作ってみる',
-      icon: 'fa-cutlery',
-    }, {
-      self: true,
-      link: 'hakatashi.html',
-      title: 'もしインターネットの1秒が1年だったら',
-      icon: 'fa-clock-o',
-    }, {
-      link: 'hideo54.html',
-      title: 'まだReactionで消耗してるの?',
-      icon: 'fa-thumbs-up',
-    }],
-    avatar: '/../../favicon.png',
-    comment: {
-      enable: false,
-    },
-    highlight: {
-      enable: true,
-    },
-  },
-  url_for: (path) => {
-    if (path === undefined) {
-      return './';
-    } else if (path.startsWith('http')) {
-      return path;
-    } else {
-      return `beautiful-hexo/source${path}`;
-    }
-  },
-}
+};
+
+module.exports = config;

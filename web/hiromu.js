@@ -1,59 +1,29 @@
-{
-  config: {
-    title: 'SunPro 2016技術書典',
-    author: 'hiromu',
-    email: 'admin@sunpro.io',
-    description: 'こんにちは。SunProメンバーのhiromu(@hiromu1996)です。今回は、世間で何でもできると話題になっているディープラーニングについて、本当は何でもできるのであれば、この空いたお腹も満たしてくれようということで、ディープラーニングでご飯を作ってみるということに挑戦してみました。……という出落ち記事です。実際は、ディープラーニングを使った画像生成アルゴリズムとして最近話題になっている「Deep Convolutional Generative Adversarial Network (DCGAN)」でご飯の画像を生成するということに挑戦してみました。',
-  },
-  page: {
-    url: 'hiromu.html',
-    plain_title: 'ディープラーニングでご飯を作ってみる',
-    title: 'ディープ<wbr>ラーニングで<wbr>ご飯を<wbr>作ってみる',
-    subtitle: 'hiromu',
+const config = require('./base-config.js');
+const fs = require('fs');
+
+Object.assign(config.config, {
+	author: 'hiromu',
+	description: 'こんにちは。SunProメンバーのhiromu (@hiromu1996) です。今回は、2016年11月下旬に発表された「pix2pix」を使って、絵から芸術家の脳内を再現するということに挑戦してみました。一体どういうことなのかというと、アメリカン・コミックのような画風で知られる、ポップアートの代表的な画家、ロイ・リキテンスタインの絵画から彼が脳内で思い浮かべていたであろう風景を再現するシステムを作ってみた、という記事となります。ロイ・リキテンスタインといっても、あんまりイメージが浮かばないかもしれませんが、代表作の1つである図2.1の「ヘアリボンの少女」は見たことがある人もいるんじゃないかと思います。今回は、そうしたリキテンスタインの作品の中でも、図2.2のように室内の風景をモデルにした「インテリア」シリーズを対象とします。'
+});
+
+config.page = {
+	url: 'hiromu.html',
+	plain_title: '深層学習で芸術家の脳内を再現する',
+	title: '深層学習で<wbr>芸術家の<wbr>脳内を<wbr>再現する',
+	subtitle: 'hiromu',
     content: fs.readFileSync('../webroot/hiromu.html'),
     pdf: {
       link: 'hiromu.pdf',
-      size: 8.2,
+      size: 0.8,
+    },
+    prev: {
+      link: 'hideo54.html',
+      title: '機械学習でμ’s の声を識別する',
     },
     next: {
       link: 'hakatashi.html',
-      title: 'もしインターネットの1秒が1年だったら',
+      title: 'ISUCON 2016 参戦記',
     },
-  },
-  theme: {
-    'navbar-links': {
-      'Home': undefined,
-      'GitHub': 'https://github.com/hakatashi/SunPro-techbookfest',
-    },
-    footer: [{
-      self: true,
-      link: 'hiromu.html',
-      title: 'ディープラーニングでご飯を作ってみる',
-      icon: 'fa-cutlery',
-    }, {
-      link: 'hakatashi.html',
-      title: 'もしインターネットの1秒が1年だったら',
-      icon: 'fa-clock-o',
-    }, {
-      link: 'hideo54.html',
-      title: 'まだReactionで消耗してるの?',
-      icon: 'fa-thumbs-up',
-    }],
-    avatar: '/../../favicon.png',
-    comment: {
-      enable: false,
-    },
-    highlight: {
-      enable: true,
-    },
-  },
-  url_for: (path) => {
-    if (path === undefined) {
-      return './';
-    } else if (path.startsWith('http')) {
-      return path;
-    } else {
-      return `beautiful-hexo/source${path}`;
-    }
-  },
-}
+};
+
+module.exports = config;
